@@ -3,8 +3,7 @@ Weather Web Server - Local Flask server for weather forecasts
 Accepts city/state names and returns current weather forecast
 Run: python weather_server.py
 Visit: http://localhost:5000
-"""
-""" 
+
 Files referenced:
 - weather_index.html: The HTML template for the main page where users can input a location and 
 view the forecast.
