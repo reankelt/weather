@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Forecast</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+            font-size: 1.1em;
+            margin: 20px 0;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #c33;
+        }
+
+        .forecast-info {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .location-title {
+            font-size: 1.8em;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .coordinates {
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        .forecast-periods {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .period {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 15px;
+            transition: all 0.3s;
+        }
+
+        .period:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.15);
+        }
+
+        .period-name {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .period-temp {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .period-detail {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        .period-detail strong {
+            margin-right: 5px;
+        }
+
+        .forecast {
+            font-size: 0.9em;
+            color: #555;
+            margin-top: 10px;
+            line-height: 1.4;
+        }
+
+        .no-results {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+            font-size: 1.2em;
+        }
+
+        .examples {
+            background: #f0f4ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        .examples p {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌦️ Weather Forecast</h1>
+
+        <div class="search-box">
+            <input 
+                type="text" 
+                id="locationInput" 
+                placeholder="Enter a US city or state (e.g., 'San Francisco, CA' or 'California')"
+                autocomplete="off"
+            >
+            <button onclick="getForecast()">Search</button>
+        </div>
+
+        <div class="examples">
+            <p><strong>Examples:</strong> San Francisco CA, New York, Los Angeles CA, Texas, Miami FL, Chicago IL</p>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            Fetching weather forecast...
+        </div>
+
+        <div id="errorContainer"></div>
+        <div id="forecastContainer"></div>
+    </div>
+
+    <script>
+        const locationInput = document.getElementById("locationInput");
+        const loadingEl = document.getElementById("loading");
+        const errorContainer = document.getElementById("errorContainer");
+        const forecastContainer = document.getElementById("forecastContainer");
+
+        // Search on Enter key
+        locationInput.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                getForecast();
+            }
+        });
+
+        async function getForecast() {
+            const location = locationInput.value.trim();
+
+            if (!location) {
+                showError("Please enter a city or state name");
+                return;
+            }
+
+            errorContainer.innerHTML = "";
+            forecastContainer.innerHTML = "";
+            loadingEl.classList.add("show");
+
+            try {
+                const response = await fetch(`/api/forecast?location=${encodeURIComponent(location)}`);
+                const data = await response.json();
+
+                loadingEl.classList.remove("show");
+
+                if (data.success) {
+                    displayForecast(data);
+                } else {
+                    showError(data.error);
+                }
+            } catch (error) {
+                loadingEl.classList.remove("show");
+                showError("Failed to fetch forecast. Please try again.");
+                console.error(error);
+            }
+        }
+
+        function displayForecast(data) {
+            const html = `
+                <div class="forecast-info">
+                    <div class="location-title">${data.location}</div>
+                    <div class="coordinates">
+                        Latitude: ${data.coordinates.latitude.toFixed(4)}, 
+                        Longitude: ${data.coordinates.longitude.toFixed(4)}
+                    </div>
+                </div>
+
+                <div class="forecast-periods">
+                    ${data.forecast.map(period => `
+                        <div class="period">
+                            <div class="period-name">${period.name}</div>
+                            <div class="period-temp">${period.temperature}</div>
+                            <div class="period-detail">
+                                <strong>Wind:</strong> ${period.windSpeed} ${period.windDirection}
+                            </div>
+                            <div class="forecast">${period.detailedForecast}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+
+            forecastContainer.innerHTML = html;
+        }
+
+        function showError(message) {
+            errorContainer.innerHTML = `<div class="error">${message}</div>`;
+        }
+
+        // Focus input on page load
+        window.addEventListener("load", function() {
+            locationInput.focus();
+        });
+    </script>
+</body>
+</html>
